@@ -2,7 +2,9 @@
 [submodule "helm-charts"]
 	path = helm-charts
 	url = https://github.com/opensearch-project/helm-charts
+	branch = main
 
 [submodule "ansible-playbook"]
 	path = ansible-playbook
 	url = https://github.com/opensearch-project/ansible-playbook
+	branch = main
