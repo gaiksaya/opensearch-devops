@@ -1,6 +1,9 @@
 name: Nightly Playground Validate and Deploy
 
 on:
+  push:
+    branches: 'add-GHA'
+  workflow_dispatch:
   schedule:
     - cron:  '0 0 * * *'
 
@@ -25,8 +28,11 @@ jobs:
           opensearch_url_latest=https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${DIST_VERSION}/latest/linux/x64/tar/dist/opensearch/opensearch-${DIST_VERSION}-linux-x64.tar.gz
           opensearch_dashboards_url_latest=https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${DIST_VERSION}/latest/linux/x64/tar/dist/opensearch-dashboards/opensearch-dashboards-${DIST_VERSION}-linux-x64.tar.gz
           
-          opensearch_build_id=$(curl -w "%{url_effective}\n" -I -L -f -S $opensearch_url_latest -o /dev/null | cut -d / -f 8)
-          dashboards_build_id=$(curl -w "%{url_effective}\n" -I -L -f -S $opensearch_dashboards_url_latest -o /dev/null | cut -d / -f 8)
+          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${DIST_VERSION}/latest/linux/x64/tar/dist/opensearch/manifest.yml -O opensearch.yml
+          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${DIST_VERSION}/latest/linux/x64/tar/dist/opensearch-dashboards/manifest.yml -O dashboards.yml
+
+          opensearch_build_id=$(yq .build.id opensearch.yml)
+          dashboards_build_id=$(yq .build.id dashboards.yml)
 
           echo "OPENSEARCH_BUILD_ID=${opensearch_build_id}" >> "$GITHUB_OUTPUT"
           echo "OPENSEARCH_DASHBOARD_BUILD_ID=${dashboard_build_id}" >> "$GITHUB_OUTPUT"
@@ -39,9 +45,7 @@ jobs:
 
   validate-and-deploy:
     outputs:
-      ENDPOINT: ${{ steps.get-endpoint.outputs.ENDPOINT }}
-      OPENSEARCH_JSON: ${{ steps.get-endpoint.outputs.OPENSEARCH_JSON }}
-      OPENSEARCH_DASHBOARDS_JSON: ${{ steps.get-endpoint.outputs.OPENSEARCH_DASHBOARDS_JSON }}
+      ENDPOINT: ${{ steps.deploy.outputs.ENDPOINT }}
     permissions:
       id-token: write
       contents: read
@@ -77,15 +81,14 @@ jobs:
           node-version: 16.x
 
       - name: Deploy nightly playground
+        id: deploy
         working-directory: nightly-playground
         run: |
           npm install
           npm run cdk bootstrap -- -c distVersion=${DIST_VERSION} -c distributionUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} -c dashboardsUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}} -c dashboardPassword=${{ SECRETS.DASHBOARDS_PASSWORD }}
-          npm run cdk deploy "*" -- -c distVersion=${DIST_VERSION} -c distributionUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} -c dashboardsUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}} -c dashboardPassword=${{ SECRETS.DASHBOARDS_PASSWORD }} --require-approval never
+          npm run cdk deploy "*" -- -c distVersion=${DIST_VERSION} -c distributionUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} -c dashboardsUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}} -c dashboardPassword=${{ SECRETS.DASHBOARDS_PASSWORD }} --require-approval never --outputs-file output.json
 
-      - name: Get endpoint URL
-        id: get-endpoint
-        run: |
+          yq e '.. | select(has("loadbalancerurl")) | .loadbalancerurl' output.json
           echo "ENDPOINT=$(aws cloudformation --region us-west-2 describe-stacks --stack-name infraStack-2x --query 'Stacks[0].Outputs[0].OutputValue' --output text)" >> "$GITHUB_OUTPUT"
 
   index-dist-manifests:
