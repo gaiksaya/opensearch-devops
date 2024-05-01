@@ -60,7 +60,7 @@ export class NightlyPlaygroundStack {
     });
 
     this.stacks.push(networkStack);
-    networkStack.addDependency(commonToolsStack);
+    // networkStack.addDependency(commonToolsStack);
 
     // @ts-ignore
     const infraStack = new InfraStack(scope, `infraStack-${playGroundId}`, {
