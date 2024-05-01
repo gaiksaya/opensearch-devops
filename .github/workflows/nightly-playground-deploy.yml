@@ -42,22 +42,22 @@ jobs:
     needs: set-os-osd-urls
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: 'opensearch-project/opensearch-build'
+      # - uses: actions/checkout@v3
+      #   with:
+      #     repository: 'opensearch-project/opensearch-build'
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.9
+      # - name: Set up Python 3.9
+      #   uses: actions/setup-python@v3
+      #   with:
+      #     python-version: 3.9
 
-      - name: Install Pipenv and Dependencies
-        run: |
-          python -m pip install --upgrade pipenv wheel
-          pipenv install --deploy --dev
+      # - name: Install Pipenv and Dependencies
+      #   run: |
+      #     python -m pip install --upgrade pipenv wheel
+      #     pipenv install --deploy --dev
 
-      - name: Validate OS and OSD
-        run: ./validation.sh --file-path opensearch=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} opensearch-dashboards=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}}
+      # - name: Validate OS and OSD
+      #   run: ./validation.sh --file-path opensearch=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} opensearch-dashboards=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}}
 
       - uses: actions/checkout@v3
 
@@ -77,7 +77,7 @@ jobs:
           npm install
           playground_id=`echo ${{inputs.dist_version}} | cut -d. -f1`x
           echo "PLAYGROUND_ID=$playground_id" >> "$GITHUB_OUTPUT"
-          npm run cdk deploy "infra*" -- -c playGroundId=$playground_id -c distVersion=${{inputs.dist_version}} -c distributionUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} -c dashboardsUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}} -c dashboardPassword=${{ SECRETS.DASHBOARDS_PASSWORD }} -c adminPassword=${{ SECRETS.OPENSEARCH_PASSWORD }} -c endpoint2x=${{secrets.endpoint_2x}} -c endpoint3x=${{secrets.endpoint_3x}} --require-approval never
+          # npm run cdk deploy "infra*" -- -c playGroundId=$playground_id -c distVersion=${{inputs.dist_version}} -c distributionUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} -c dashboardsUrl=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}} -c dashboardPassword=${{ SECRETS.DASHBOARDS_PASSWORD }} -c adminPassword=${{ SECRETS.OPENSEARCH_PASSWORD }} -c endpoint2x=${{secrets.endpoint_2x}} -c endpoint3x=${{secrets.endpoint_3x}} --require-approval never
 
           echo "ENDPOINT=$(aws cloudformation --region us-west-2 describe-stacks --stack-name infraStack-$playground_id --query 'Stacks[0].Outputs[0].OutputValue' --output text)" >> "$GITHUB_OUTPUT"
 
@@ -96,44 +96,44 @@ jobs:
 
           echo "endpoint is: ${{needs.validate-and-deploy.outputs.ENDPOINT}}"
 
-          curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/opensearch/_doc/1" -H "Content-Type: application/json" -d @opensearch.json -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  #         curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/opensearch/_doc/1" -H "Content-Type: application/json" -d @opensearch.json -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
 
-          curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/opensearch-dashboards/_doc/1" -H "Content-Type: application/json" -d @dashboards.json -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  #         curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/opensearch-dashboards/_doc/1" -H "Content-Type: application/json" -d @dashboards.json -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
 
-  configure-alerts-notifications:
-    needs: validate-and-deploy
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Create notification channel
-        run : |
-          curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/_plugins/_notifications/configs" -H 'Content-Type: application/json' -d'
-          {
-            "config_id": "slack-notification-channel",
-            "name": "slack-notification-channel",
-            "config": {
-              "name": "slack-notification-channel",
-              "description": "Slack notification channel for monitoring alerts",
-              "config_type": "webhook",
-              "is_enabled": true,
-              "webhook": {
-                "url": "${{ secrets.SLACK_WEBHOOK }}"
-                }
-              }
-            }' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  # configure-alerts-notifications:
+  #   needs: validate-and-deploy
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: true
+  #   steps:
+  #     - name: Create notification channel
+  #       run : |
+  #         curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/_plugins/_notifications/configs" -H 'Content-Type: application/json' -d'
+  #         {
+  #           "config_id": "slack-notification-channel",
+  #           "name": "slack-notification-channel",
+  #           "config": {
+  #             "name": "slack-notification-channel",
+  #             "description": "Slack notification channel for monitoring alerts",
+  #             "config_type": "webhook",
+  #             "is_enabled": true,
+  #             "webhook": {
+  #               "url": "${{ secrets.SLACK_WEBHOOK }}"
+  #               }
+  #             }
+  #           }' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
 
-      - name: Configure monitors
-        run: |
-          for config in `ls nightly-playground/resources/monitors-config/`;
-          do curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/_plugins/_alerting/monitors" -H 'Content-Type: application/json' -d @nightly-playground/resources/monitors-config/$config -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure;
-          done
+  #     - name: Configure monitors
+  #       run: |
+  #         for config in `ls nightly-playground/resources/monitors-config/`;
+  #         do curl -XPOST -f "https://${{needs.validate-and-deploy.outputs.ENDPOINT}}:8443/_plugins/_alerting/monitors" -H 'Content-Type: application/json' -d @nightly-playground/resources/monitors-config/$config -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure;
+  #         done
 
-  add-sample-data:
-    needs: validate-and-deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Add sample data
-        run : |
-          curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/logs' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
-          curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/flights' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
-          curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/ecommerce' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  # add-sample-data:
+  #   needs: validate-and-deploy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Add sample data
+  #       run : |
+  #         curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/logs' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  #         curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/flights' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
+  #         curl -X POST -f 'https://${{needs.validate-and-deploy.outputs.ENDPOINT}}/${{needs.validate-and-deploy.outputs.PLAYGROUND_ID}}/api/sample_data/ecommerce' -H 'securitytenant: global' -H 'Content-Type: application/json' -H 'osd-version: ${{inputs.dist_version}}' -H 'osd-xsrf: osd-fetch' -u ${{ secrets.OPENSEARCH_USER }}:${{ secrets.OPENSEARCH_PASSWORD }} --insecure
