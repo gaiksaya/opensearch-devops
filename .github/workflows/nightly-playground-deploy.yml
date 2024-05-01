@@ -1,7 +1,7 @@
 name: Nightly Playground Validate and Deploy
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       dist_version:
         required: true
