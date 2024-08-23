@@ -63,7 +63,7 @@ jobs:
       - name: Validate OS and OSD
         run: |
           export OPENSEARCH_INITIAL_ADMIN_PASSWORD="myStrongPassword123!"
-          ./validation.sh --file-path opensearch=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}} opensearch-dashboards=${{needs.set-os-osd-urls.outputs.OPENSEARCH_DASHBOARDS_URL}}
+          ./validation.sh --file-path opensearch=${{needs.set-os-osd-urls.outputs.OPENSEARCH_URL}}
 
       - if: failure()
         uses: actions/upload-artifact@v4
