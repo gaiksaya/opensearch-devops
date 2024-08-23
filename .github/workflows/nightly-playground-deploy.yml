@@ -63,7 +63,7 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          path: /tmp/opensearch.log
+          path: "/tmp/testing"
       
       
   #     - uses: actions/checkout@v3
