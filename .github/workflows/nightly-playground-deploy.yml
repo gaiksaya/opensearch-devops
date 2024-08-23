@@ -33,6 +33,9 @@ jobs:
           echo "OPENSEARCH_DASHBOARDS_DIST_MANIFEST_URL=https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{inputs.dist_version}}/$dashboards_build_id/linux/x64/tar/dist/opensearch-dashboards/manifest.yml" >> "$GITHUB_OUTPUT"
 
   validate-and-deploy:
+    container:
+      image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
+      options: --user root
     outputs:
       ENDPOINT: ${{ steps.deploy.outputs.ENDPOINT }}
       PLAYGROUND_ID: ${{ steps.deploy.outputs.playground_id }}
