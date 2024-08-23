@@ -63,7 +63,7 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}
+          path: /tmp/opensearch.log
       
       
   #     - uses: actions/checkout@v3
