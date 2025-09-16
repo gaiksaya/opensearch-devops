@@ -150,6 +150,7 @@ jobs:
       #           --insecure
       #       done
       #     done
+      - uses: actions/checkout@v3
           
       - name: Add Search Relevance Workbench data
         if: startsWith(inputs.dist_version, '3.')
